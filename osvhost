@@ -1,0 +1,38 @@
+#!/usr/bin/env php
+
+<?php
+
+echo "Hello vHost Creator 1.0.\n";
+
+$serverName = $argv[1];
+$path = (isset($argv[3]))? $argv[3] : '/Users/arzola/Sites/';
+$laravel = (!isset($argv[2])) ? '' : '/public' ;
+
+$tpl = <<<TPL
+server{
+    server_name $serverName.dev;
+    listen 80;
+    root $path$serverName$laravel;
+    error_log  /Users/arzola/Sites/logs/$serverName.log;
+    index index.htm index.php;
+    location / {
+        try_files \$uri \$uri/ /index.php;
+        autoindex on;
+    }
+    location ~ \.php$ {
+        fastcgi_pass 127.0.0.1:9000;
+        fastcgi_split_path_info ^(.+\.php)(/.+)\$;
+        fastcgi_index index.php;
+        include fastcgi_params;
+        fastcgi_param SCRIPT_FILENAME \$document_root/\$fastcgi_script_name;
+    }
+    location ~* /(.git|cache|bin|logs|backups|tests)/.*$ { return 403; }
+    location ~* /(system|vendor|config)/.*\.(txt|xml|md|html|yaml|php|pl|py|cgi|twig|sh|bat)$ { return 403; }
+    location ~* /user/.*\.(txt|md|yaml|php|pl|py|cgi|twig|sh|bat)$ { return 403; }
+    location ~ /(LICENSE.txt|composer.lock|composer.json|nginx.conf|web.config|htaccess.txt|\.htaccess) { return 403; }
+}
+TPL;
+
+$created =file_put_contents("/usr/local/etc/nginx/servers/$serverName.conf",$tpl);
+
+echo "Creado vhost $serverName.conf\n";
